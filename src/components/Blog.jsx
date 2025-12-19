@@ -17,7 +17,7 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
 
   const handleLike = () => {
     const userId = blog.user?.id || blog.user?._id || blog.user
-    
+
     const updatedBlog = {
       user: userId,
       likes: blog.likes + 1,

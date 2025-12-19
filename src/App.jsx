@@ -17,7 +17,7 @@ const App = () => {
   useEffect(() => {
     blogService.getAll().then(blogs =>
       setBlogs(blogs)
-    )  
+    )
   }, [])
 
   useEffect(() => {
@@ -38,10 +38,10 @@ const App = () => {
 
     try {
       const user = await loginService.login({ username, password })
-      
+
       const tokenPayload = JSON.parse(atob(user.token.split('.')[1]))
       const userWithId = { ...user, id: tokenPayload.id }
-      
+
       window.localStorage.setItem(
         'loggedBlogappUser', JSON.stringify(userWithId)
       )
