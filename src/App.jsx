@@ -24,6 +24,10 @@ const App = () => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogappUser')
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
+      if (!user.id && user.token) {
+        const tokenPayload = JSON.parse(atob(user.token.split('.')[1]))
+        user.id = tokenPayload.id
+      }
       setUser(user)
       blogService.setToken(user.token)
     }
@@ -35,12 +39,15 @@ const App = () => {
     try {
       const user = await loginService.login({ username, password })
       
+      const tokenPayload = JSON.parse(atob(user.token.split('.')[1]))
+      const userWithId = { ...user, id: tokenPayload.id }
+      
       window.localStorage.setItem(
-        'loggedBlogappUser', JSON.stringify(user)
+        'loggedBlogappUser', JSON.stringify(userWithId)
       )
 
       blogService.setToken(user.token)
-      setUser(user)
+      setUser(userWithId)
       setUsername('')
       setPassword('')
     } catch {
@@ -102,6 +109,21 @@ const App = () => {
       })
   }
 
+  const deleteBlog = (id) => {
+    blogService.remove(id)
+      .then(() => {
+        setBlogs(blogs.filter(blog => blog.id !== id))
+      })
+      .catch((error) => {
+        setErrorMessage(`Failed to delete blog: ${error.response?.data?.error || error.message}`)
+        setNotificationType('error')
+        setTimeout(() => {
+          setErrorMessage(null)
+          setNotificationType(null)
+        }, 5000)
+      })
+  }
+
   if (user === null) {
     return (
       <div>
@@ -149,7 +171,7 @@ const App = () => {
       <p>{user.name} logged in <button onClick={handleLogout}>logout</button></p>
       {blogForm()}
       {blogsToShow.map(blog =>
-        <Blog key={blog.id} blog={blog} updateBlog={updateBlog} />
+        <Blog key={blog.id} blog={blog} updateBlog={updateBlog} deleteBlog={deleteBlog} user={user} />
       )}
     </div>
   )
