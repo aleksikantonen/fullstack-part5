@@ -16,7 +16,7 @@ const App = () => {
 
   useEffect(() => {
     blogService.getAll().then(blogs =>
-      setBlogs( blogs )
+      setBlogs(blogs)
     )  
   }, [])
 
@@ -85,7 +85,12 @@ const App = () => {
   const updateBlog = (id, blogObject) => {
     blogService.update(id, blogObject)
       .then((returnedBlog) => {
-        setBlogs(blogs.map(blog => blog.id !== id ? blog : returnedBlog))
+        const originalBlog = blogs.find(b => b.id === id)
+        const updatedBlog = {
+          ...returnedBlog,
+          user: originalBlog?.user || returnedBlog.user
+        }
+        setBlogs(blogs.map(blog => blog.id !== id ? blog : updatedBlog))
       })
       .catch((error) => {
         setErrorMessage(`Failed to update blog: ${error.response?.data?.error || error.message}`)
@@ -135,13 +140,15 @@ const App = () => {
     </Togglable>
   )
 
+  const blogsToShow = [...blogs].sort((a, b) => b.likes - a.likes)
+
   return (
     <div>
       <h2>blogs</h2>
       <Notification message={errorMessage} type={notificationType} />
       <p>{user.name} logged in <button onClick={handleLogout}>logout</button></p>
       {blogForm()}
-      {blogs.map(blog =>
+      {blogsToShow.map(blog =>
         <Blog key={blog.id} blog={blog} updateBlog={updateBlog} />
       )}
     </div>
