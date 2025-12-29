@@ -85,4 +85,45 @@ describe('Blog app', () => {
       await expect(blogElement).not.toBeVisible()
     })
   })
+
+  describe('Blog ownership', () => {
+    beforeEach(async ({ page, request }) => {
+      await request.post('/api/testing/reset')
+      await request.post('/api/users', {
+        data: {
+          name: 'First User',
+          username: 'firstUser',
+          password: 'secret'
+        }
+      })
+      await request.post('/api/users', {
+        data: {
+          name: 'Second User',
+          username: 'secondUser',
+          password: 'secret'
+        }
+      })
+
+      await page.goto('/')
+    })
+
+    test('only the creator sees the delete button', async ({ page }) => {
+      await loginWith(page, 'firstUser', 'secret')
+      await createBlog(page, 'Owned Blog', 'First User', 'https://testblog.com')
+      
+      const blogElement = page.locator('.blog').filter({ hasText: 'Owned Blog' })
+      await blogElement.getByRole('button', { name: 'view' }).click()
+      
+      await expect(blogElement.getByRole('button', { name: 'remove' })).toBeVisible()
+      
+      await page.getByRole('button', { name: 'logout' }).click()
+      
+      await loginWith(page, 'secondUser', 'secret')
+      
+      const blogElementSecond = page.locator('.blog').filter({ hasText: 'Owned Blog' })
+      await blogElementSecond.getByRole('button', { name: 'view' }).click()
+      
+      await expect(blogElementSecond.getByRole('button', { name: 'remove' })).not.toBeVisible()
+    })
+  })
 })
