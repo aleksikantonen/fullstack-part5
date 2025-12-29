@@ -40,7 +40,7 @@ describe('Blog app', () => {
     })
   })
 
-  describe('When logged in', () => {
+  describe('when logged in', () => {
     beforeEach(async ({ page }) => {
       await loginWith(page, 'testUser', 'secret')
     })
@@ -124,6 +124,34 @@ describe('Blog app', () => {
       await blogElementSecond.getByRole('button', { name: 'view' }).click()
       
       await expect(blogElementSecond.getByRole('button', { name: 'remove' })).not.toBeVisible()
+    })
+  })
+
+  describe('Blog ordering', () => {
+    beforeEach(async ({ page }) => {
+      await loginWith(page, 'testUser', 'secret')
+    })
+
+    test('blogs are ordered by likes, most likes first', async ({ page }) => {
+      await createBlog(page, 'Blog with 0 likes', 'Author', 'https://test.com')
+      await createBlog(page, 'Blog with 2 likes', 'Author', 'https://test.com')
+      await createBlog(page, 'Blog with 1 like', 'Author', 'https://test.com')
+
+      const blogWith2Likes = page.locator('.blog').filter({ hasText: 'Blog with 2 likes' })
+      await blogWith2Likes.getByRole('button', { name: 'view' }).click()
+      await blogWith2Likes.getByRole('button', { name: 'like' }).click()
+      await expect(blogWith2Likes.getByText('likes 1')).toBeVisible()
+      await blogWith2Likes.getByRole('button', { name: 'like' }).click()
+      await expect(blogWith2Likes.getByText('likes 2')).toBeVisible()
+
+      const blogWith1Like = page.locator('.blog').filter({ hasText: 'Blog with 1 like' })
+      await blogWith1Like.getByRole('button', { name: 'view' }).click()
+      await blogWith1Like.getByRole('button', { name: 'like' }).click()
+      await expect(blogWith1Like.getByText('likes 1')).toBeVisible()
+
+      await expect(page.locator('.blog').first()).toContainText('Blog with 2 likes')
+      await expect(page.locator('.blog').nth(1)).toContainText('Blog with 1 like')
+      await expect(page.locator('.blog').nth(2)).toContainText('Blog with 0 likes')
     })
   })
 })
